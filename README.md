@@ -27,5 +27,5 @@ This is a continuation of work performed at
  
  ...One at the University of Hawaii, in an entirely test-mode status, which is accepting a mixture of SFlow and NetFlow (v9 and IPFix) exports from Arista, Juniper and Cisco routers. This is running in Docker on a rack server with 32 cores, 128 GB of RAM and 10 Gbit/sec Ethernet connectivity.
  
- ... One at home, accepting flows from my OpenWrt router, running [softflowd](https://github.com/irino/softflowd), on a Zotac ZBox with 4 cores, 8 GB RAM, 120 GB system drive and a 2TB US drive for data. 
+ ... One at home, accepting flows from my OpenWrt router, running [softflowd](https://github.com/irino/softflowd), on a Zotac ZBox with 4 cores, 8 GB RAM, 120 GB system drive and a 2TB USB drive for data. 
  
