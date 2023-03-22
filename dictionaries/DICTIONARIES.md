@@ -1,4 +1,4 @@
-# H1 Clickhouse Dictionaries For KCG
+# Clickhouse Dictionaries For KCG
 
 Once you get the initial setup running, you will find that you have flow records with such things as Layer 4 protocols (UDP, TCP, ICMP) represented as numbers, rather than as familiar names. The goflow2 repo includes a "protocols" dictionary in the compose/kcg/clickhouse directory. 
 
