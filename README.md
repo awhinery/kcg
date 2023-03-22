@@ -1,5 +1,5 @@
 # kcg
-Kafka, Clickhouse, GoFlow
+Kafka, Clickhouse, GoFlow (name follows convention from directory name in netsampler/goflow2/compose)
 
 This is a continuation of work performed at 
   
@@ -15,12 +15,14 @@ This is a continuation of work performed at
   
   The code in this repo will have at least these threads:
        
+       0 - why bother getting KCG running
        1 - how to make the KCG models in netsampler/goflow2 and clouflare/goflow work
        2 - how to promote stability in the goflow daemon
        3 - how to work with IP addresses in Clickhouse
        4 - how to change the proto-buffer definitions and the DB create.sh to fit the fields you want. 
        5 - how to create and use Clickhouse dictionaries to show names of ASNs, protocols, ethertypes
        6 - enrichment, or adding useful information to records in the pipeline before they're sent to Clickhouse
+       7 - how to import files from nfdump archives (as in those created for NFSen)
        0 - what "flows" (from SFlow/Netflow9/IPFix) are, how they represent traffic, and how flows from different sources differ
        
  As of March 2023, I have 2 instances of the KCG pipeline running. 
