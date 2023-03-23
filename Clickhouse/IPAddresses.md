@@ -1,0 +1,128 @@
+# Referencing And Using IP Addresses in GoFlow/Clickhouse
+
+This doc addresses the essentially non-obvious way that you can work with IP addresses (whether IPv6 or IPv4 addresses) in GoFlow/Clickhouse.
+
+## context
+
+It's perhaps useful to mention that IP addresses are not decimal numbers separated by periods, nor are they hexadecimal numbers separated by colons. They are, in fact, integers. It doesn't matter whether we're talking about IPv4 or IPv6. The ranges of possible integers describing unicast IP addresses observable "in the wild" (currently) comprise 2 non-intersecting ranges of numbers. 
+
+For IPv4, most of the range from 2,147,483,648 (1.0.0.0) to 3,758,096,383 (223.255.255.255), and for IPv6, using most of the range from 
+
+My Clickhouse database is closely-related to the ones described in the goflow/goflow2 repos, with some added fields. 
+I was able to make this schema work by simply adding fields in the clickhouse/create.sh file (see the demo compose folder (when it exists)). 
+
+Currently, my data in tables "flows" and "flows_raw" looks like:
+
+|name | type |
+| ------------|------------------:|
+|TimeReceived | DateTime  |
+|TimeFlowStart | DateTime  |
+|TimeFlowEnd | DateTime  |
+|Type | UInt8  |
+|SequenceNum | UInt32  |
+|SamplingRate | UInt64  |
+|SamplerAddress | FixedString(16)  |
+|SrcAddr | FixedString(16)  |
+|DstAddr | FixedString(16)  |
+|SrcAS | UInt32  |
+|DstAS | UInt32  |
+|SrcNet | UInt8  |
+|DstNet | UInt8  |
+|SrcVlan | UInt32  |
+|DstVlan | UInt32  |
+|VlanId | UInt32  |
+|IPTTL | UInt32  |
+|TCPFlags | UInt32  |
+|InIf | UInt32  |
+|OutIf | UInt32  |
+|IcmpType | UInt32  |
+|IcmpCode | UInt32  |
+|EType | UInt32  |
+|Proto | UInt32  |
+|SrcPort | UInt32  |
+|DstPort | UInt32  |
+|IPTos | UInt32  |
+|IPv6FlowLabel | UInt32  |
+|FragmentId | UInt32  |
+|FragmentOffset | UInt32  |
+|HasEncap | Bool  |
+|SrcAddrEncap | FixedString(16)  |
+|DstAddrEncap | FixedString(16)  |
+|ProtoEncap | UInt32  |
+|EtypeEncap | UInt32  |
+|IPTosEncap | UInt32  |
+|IPTTLEncap | UInt32  |
+|IPv6FlowLableEncap | UInt32  |
+|FragmentIdEncap | UInt32  |
+|FragmentOffsetEncap | UInt32  |
+|HasMPLS | Bool  |
+|MPLSCount | UInt32  |
+|MPLS1TTL | UInt32  |
+|MPLS1Label | UInt32  |
+|MPLS2TTL | UInt32  |
+|MPLS2Label | UInt32  |
+|MPLS3TTL | UInt32  |
+|MPLS3Label | UInt32  |
+|MPLSLastTTL | UInt32  |
+|MPLSLastLabel | UInt32  |
+|HasPPP | Bool  |
+|PPPAddressControl | UInt32  |
+|Bytes | UInt64  |
+|Packets | UInt64 |
+
+Some fields have been included to discover whether they're being reported by any router. (In my main 1000 packets-per-second of flow reports coming to the U. Hawaii KCG instance, I do in fact have reports with "HasPPP" = true).
+
+Three of the columns contain IP addresses, which may be either IPv4 or IPv6 addresses, in FixedString(16). This type is a binary string, which will not print properly when displayed without some sort of formating function. If you are connected to you server by SSH, and you use the clickhouse-client to do:
+
+    SELECT SrcAddr,DstAddr from flows_raw LIMIT 10
+
+Then the result will include TTY control characters which will bork your terminal emulation, and you'll probably have to close the window and start over. The representation of addresses when displayed in the Clichouse/play web interface will be about equally useful, but less annoying, as it will print some series of non-ascii characters in the output, like ("��"), but it won't bork the browser, probably. 
+
+In my opinion, you should resist the impulse to separate IPv4 and IPv6. Developing queries that are independent of address-family allows you to treat all traffic similarly, and the Layer 4 protocols which do most of the work, TCP and UDP operate identically in IPv4 and IPv6. The two can be separated in queries by using ethertype ("EType") as will be illustrated below. 
+
+### using hex()
+
+The very simplest way to display the FixedString(16) in a readable way which actually does display the address is:
+
+  SELECT hex(SrcAddr) from flows_raw LIMIT 10
+
+Which should show you an IP address as:
+   CB007101000000000000000000000000 (for 0xCB007101, AKA "203.0.113.1")
+   
+or an IPv6 Address as:
+   20010DB8410100307DB7A08DAB215578 (for "2001:db8:4101:30:7DB7:A08D:AB21:5578" )
+
+While this may not be ideal for someone not familiar with a IP Addresses as hexadecimal strings, it is a clean, simple way to see the addresses and make them displayable simply, when you just want to form a query as a test. 
+
+### Seeing addresses in familiar notations
+
+Since IPv6 addresses are pretty-familiar-looking in the hex() example above, let's look at IPv4 addresses. 
+
+To display a KCG IPv4 address as Clickhouse's IPv4 type:
+
+   SELECT toIPv4(reinterpretAsUInt32(substring(reverse(SrcAddr), 13,4))) as src, toTypeName(src) as type FROM flows_raw LIMIT 1
+   
+   | src           | type |
+   | -------------:|:-----:|
+   |203.0.113.1 |IPv4|
+   
+To display a KCG IPv4 address as an ASCII string:
+
+   SELECT IPv4NumToString(reinterpretAsUInt32(substring(reverse(SrcAddr), 13,4))) as src, toTypeName(src) as type FROM flows_raw LIMIT 1
+   
+   | src           | type |
+   | -------------:|:-----:|
+   |203.0.113.1 |String|
+   
+   
+Since the "IPv4" type is simply a UInt32 with different display rules, you don't need to convert to type IPv4 to use "IPv4NumToString".
+
+The IPv6 version is less unsightly:
+
+   SELECT IPv6NumToString(SrcAddr) AS src, toTypeName(src) as type FROM flows_raw WHERE EType = 0x86DD LIMIT 1
+   
+   | src           | type |
+   | -------------:|:-----:|
+   |2001:db8:4101:30:7DB7::A08D |String|
+  
+In this case, I used a WHERE clause to specify ethertype 0x86DD, which is indicates that the Ethernet frame payload is an IPv6 datagram. If I were going to specify IPv4, I would have used ethertype 0x0800. 
