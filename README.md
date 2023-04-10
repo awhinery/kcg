@@ -31,3 +31,4 @@ This is a continuation of work performed at
  
  ... One at home, accepting flows from my OpenWrt router, running [softflowd](https://github.com/irino/softflowd), on a Zotac ZBox with 4 cores, 8 GB RAM, 120 GB system drive and a 2TB USB drive for data. 
  
+It should probably be said that a primary vision for this effort is to emulate the functionality of NFSen (https://nfsen.sourceforge.net/) , with a better backend, better frontend, and better everything else. What NFSen is (was) a really good flow data exploration interface, but it queried a low-performance, un-indexed data layer, which could take a really long time to perform broad inquiries.
