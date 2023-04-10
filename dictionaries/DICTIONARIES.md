@@ -12,7 +12,13 @@ Further desirable dictionaries will include:
   ..* well-known TCP/UDP ports
   ..* perhaps other things
   
-Contrasted to dictionaries, there will also be reference tables for such things as network prefixes, etc, derived from flow data. Those metrics will be more dynamic, and more derived from received flow records. 
+Contrasted to dictionaries, there will also be reference tables for such things as network prefixes, etc, derived from flow data. Those metrics will be more dynamic, and more derived from received flow records.
+
+In my on-going KCG development, I have made 2 more dictionaries, for interfaces and for sampler (router) names-to-IP numbers.
+
+I have found that the addresses contained in flow payloads don't tend to be predictable, even when an effort is made to bind the source address in configuration. So in order to reliably map router names to IP addresses reported in the flows as "sampler" addresses, one needs a complete lists of IPs that appear on a router, and a unique ID to map them to. I chose to use Perl/SNMP to discover the lowest index numbered Loopback interface with a public IP address (if you don't filter, the process will turn up addresses on Loopbacks resembling "127.0.0.x", go figure. 
+
+I am also in the process of working out how to use these dictionaries with dictGet() to populate variables with key/value sets, so that one can have a drop-down list that shows "Ethernet21" instead of the SNMP index "49". For Grafana variable stuff, go to the Grafana README.
 
 In this directory, I will put Perl scripts. (You will note that Perl has never been proven to cause cancer in rats, and these simple, text extraction and organizing scripts with no imported modules should be illustrative enough to show you what I did. I can type Perl without looking at instructions, and its strengths are well used here.) 
 
@@ -40,6 +46,8 @@ something like:
     0 0 * * 0 wget -O - https://bgp.potaroo.net/cidr/autnums.html 2> /dev/null | ./makeaslist.pl 2> /dev/null > /path/to/chstuff/user_files/aslist.tsv
 
 (the above line inserted into your crontab file)
+
+
 
 
 
