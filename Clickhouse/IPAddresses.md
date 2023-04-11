@@ -1,12 +1,15 @@
 # Referencing And Using IP Addresses in GoFlow/Clickhouse
 
 This doc addresses the essentially non-obvious way that you can work with IP addresses (whether IPv6 or IPv4 addresses) in GoFlow/Clickhouse.
+NOTE: I MAY CHANGE THE PART ABOUT CONVERSIONS FROM FIXEDSTRING(16) TO IPv[46] ADDRESSES VERY SOON. (seems like I can simplify the functions I'm using.
 
 ## context
 
-It's perhaps useful to mention that IP addresses are not decimal numbers separated by periods, nor are they hexadecimal numbers separated by colons. They are, in fact, integers. It doesn't matter whether we're talking about IPv4 or IPv6. The ranges of possible integers describing unicast IP addresses observable "in the wild" (currently) comprise 2 non-intersecting ranges of numbers. 
+It's perhaps useful to mention that IP addresses are not decimal numbers separated by periods, nor are they hexadecimal numbers separated by colons. They are, in fact, integers (or whole numbers, or unsigned integers, etc Tomato/Tomahto). It doesn't matter whether we're talking about IPv4 or IPv6. The ranges of possible integers describing unicast IP addresses observable "in the wild" (currently) comprise 2 non-intersecting ranges of numbers. 
 
-For IPv4, most of the range from 2,147,483,648 (1.0.0.0) to 3,758,096,383 (223.255.255.255), and for IPv6, using most of the range from 
+IPv4 global addresses use most of the range from 2,147,483,648 (1.0.0.0) to 3,758,096,383 (223.255.255.255), and IPv6 globals are currently using most of the range from 2000::/16 to 3FFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF (totaling 42,535,295,865,117,307,914,475,081,855,261,474,816 decimal addresses). 
+
+The representation of IP addresses in the original Cloudflare GoFlow examples was probably influenced by the fact that ProtoBuffers lack a 128 bit unsigned integer type, which would be considerably simpler for a combined IPv4/IPv6 column type. It would be interesting to see what kind of performance hit we're taking fiddling around with this FixedString(16) type, which might even be possible with funneling everything into a new table, once it gets into Clickhouse.
 
 My Clickhouse database is closely-related to the ones described in the goflow/goflow2 repos, with some added fields. 
 I was able to make this schema work by simply adding fields in the clickhouse/create.sh file (see the demo compose folder (when it exists)). 
@@ -70,19 +73,21 @@ Currently, my data in tables "flows" and "flows_raw" looks like:
 |Bytes | UInt64  |
 |Packets | UInt64 |
 
-Some fields have been included to discover whether they're being reported by any router. (In my main 1000 packets-per-second of flow reports coming to the U. Hawaii KCG instance, I do in fact have reports with "HasPPP" = true).
+Some fields have been included to discover whether they're being reported by any router. (In my main 1000 packets-per-second of flow reports coming to the U. Hawaii KCG instance, I do in fact have reports with "HasPPP" = true). 
 
 Three of the columns contain IP addresses, which may be either IPv4 or IPv6 addresses, in FixedString(16). This type is a binary string, which will not print properly when displayed without some sort of formating function. If you are connected to you server by SSH, and you use the clickhouse-client to do:
 
     SELECT SrcAddr,DstAddr from flows_raw LIMIT 10
 
-Then the result will include TTY control characters which will bork your terminal emulation, and you'll probably have to close the window and start over. The representation of addresses when displayed in the Clichouse/play web interface will be about equally useful, but less annoying, as it will print some series of non-ascii characters in the output, like ("��"), but it won't bork the browser, probably. 
+Then the result will include TTY control characters which will bork your terminal emulation, and you'll probably have to close the window and start over. The representation of addresses when displayed in the Clichouse/play web interface will be about equally useful, but less annoying, as it will print some series of non-ascii characters in the output, like ("��"), but it won't bother your web browser, probably. 
+
+If I were starting from scratch (maybe later), I would make the abbreviation of the word "Address" consistent across current non-consistent fields Src*Addr*, Dst*Addr*, Sampler*Address*.
 
 In my opinion, you should resist the impulse to separate IPv4 and IPv6. Developing queries that are independent of address-family allows you to treat all traffic similarly, and the Layer 4 protocols which do most of the work, TCP and UDP operate identically in IPv4 and IPv6. The two can be separated in queries by using ethertype ("EType") as will be illustrated below. 
 
 ### using hex()
 
-The very simplest way to display the FixedString(16) in a readable way which actually does display the address is:
+The simplest way to display the FixedString(16) in a readable way which actually does display the address is:
 
   SELECT hex(SrcAddr) from flows_raw LIMIT 10
 
@@ -106,6 +111,21 @@ To display a KCG IPv4 address as Clickhouse's IPv4 type:
    | -------------:|:-----:|
    |203.0.113.1 |IPv4|
    
+Where "reverse(SrcAddr)" reverses the byte order of the FixedString(16):
+
+    SrcAddr:            CB007101000000000000000000000000
+    SrcAddr reversed:   000000000000000000000000017100CB
+
+And "substring(reverse(SrcAddr), 13,4)" takes only the last 4 bytes (starting with byte 13 and taking 4 bytes). 
+    SrcAddr reversed:   000000000000000000000000017100CB
+    Truncated to:       017100CB
+    
+And "reinterpretAsUInt32(substring(reverse(SrcAddr), 13,4))" simply makes it look to Clickhouse as a 32-bit unsigned integer:
+
+     From: 017100CB
+       To: CB007101
+(which is the same as the original 4 bytes of the SrcAddr FixedString(16) column) (stay tuned)
+
 To display a KCG IPv4 address as an ASCII string:
 
    SELECT IPv4NumToString(reinterpretAsUInt32(substring(reverse(SrcAddr), 13,4))) as src, toTypeName(src) as type FROM flows_raw LIMIT 1
