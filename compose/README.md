@@ -1,4 +1,4 @@
-#Docker Compose demos
+# Docker Compose demos
 I will get to making this an example Docker Compose group to spin up GoFlow as a demo. 
 
 Both cloudflare/flow-pipeline (a sidebar from cloudflare/goflow) and netsampler/goflow2 
