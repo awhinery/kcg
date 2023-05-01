@@ -1,10 +1,10 @@
 # Docker Compose demos
 I will get to making this an example Docker Compose group to spin up GoFlow as a demo. 
 
-Both cloudflare/flow-pipeline (a sidebar from cloudflare/goflow) and netsampler/goflow2 
+Both (GitHub repos) [cloudflare/flow-pipeline](https://github.com/cloudflare/flow-pipeline) (a sidebar from [cloudflare/goflow](https://github.com/cloudflare/goflow)) and [netsampler/goflow2](https://github.com/netsampler/goflow2) 
 have Docker Compose demos, neither of which works as I write this in April 2023.
 
-Docker Compose notes:
+## Docker Compose notes:
 
 I use "docker compose" (a plugin to docker) instead of "docker-compose" (a separate[ish] package). I believe that "docker compose" 
 is more 'modern'. 
@@ -34,9 +34,9 @@ If you have CTRL-c'd the terminal-attached version, or started the group with " 
 will stop and delete all containers. 
 
 
-In order to make the cloudflare/flow-pipeline/compose/docker-compose-clickhouse-collect.yml demo work:
+## In order to make the cloudflare/flow-pipeline/compose/docker-compose-clickhouse-collect.yml demo work:
 
-###one
+### one
 In the Kafka engine table "flows", the schema is referred to as:
 
 kafka_schema = './flow.proto:FlowMessage';
@@ -49,7 +49,7 @@ kafka_schema = 'flow.proto:FlowMessage';
 
 (without the './' before the filename )
 
-###two
+### two
 Delete the Grafana section from the docker-compose-clickhouse-collect.yml file. It's set up to use provisioning to launch dashboards
 and data sources, and even if you get it running, it will not allow you to alter dashboards. The example dashboards for Clickouse are 
 worthless placeholders, and the Clickhouse Grafana plugin that it's trying to use is the old Altinity version, which could be made to
@@ -58,9 +58,9 @@ work, but spending energy on that would be less useful than using the newer Clic
 examples in the ../Grafana folder. ) You could simply put a "blank" grafana into the compose file and work with that. If you start 
 to develop/play with it, you will want persistence across restarts, so maybe plan to mount a volume on the Grafana container.
 
-###three
+### three
 Delete the Prometheus section of docker-compose-clickhouse-collect.yml. There's nothing wrong with it, as far as I know, but it's 
 beside-the-point until you get kafka/clickhouse/goflow working. Prometheus is only there to monitor kafka/clickhouse/goflow, so you 
-can add it back when you have a working thing. Plus, if you never go beyond trying out the demo, it's irrelevant. 
+can add it back when you have a working thing. Plus, if you never go beyond trying out the demo, it's irrelevant. There are dashboards for Grafana to visualize from Prometheus, in the compose/../grafana folders. 
 
 
