@@ -37,7 +37,7 @@ will stop and delete all containers.
 ## In order to make the cloudflare/flow-pipeline/compose/docker-compose-clickhouse-collect.yml demo work:
 
 ### one
-In the Kafka engine table "flows", the schema is referred to as:
+Under the clickhouse folder in the repo compose section, in the file "create.sh" the Kafka engine table "flows", the schema is referred to as:
 
 kafka_schema = './flow.proto:FlowMessage';
 
