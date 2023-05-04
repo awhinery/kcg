@@ -23,7 +23,7 @@ This is a continuation of work performed at
        5 - how to create and use Clickhouse dictionaries to show names of ASNs, protocols, ethertypes
        6 - enrichment, or adding useful information to records in the pipeline before they're sent to Clickhouse
        7 - how to import files from nfdump archives (as in those created for NFSen)
-       0 - what "flows" (from SFlow/Netflow9/IPFix) are, how they represent traffic, and how flows from different sources differ
+       10 - what "flows" (from SFlow/Netflow9/IPFix) are, how they represent traffic, and how flows from different sources differ
        
  As of March 2023, I have 2 instances of the KCG pipeline running. 
  
