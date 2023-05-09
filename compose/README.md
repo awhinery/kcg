@@ -51,7 +51,7 @@ kafka_schema = 'flow.proto:FlowMessage';
 
 ### two
 Delete the Grafana section from the docker-compose-clickhouse-collect.yml file. It's set up to use provisioning to launch dashboards
-and data sources, and even if you get it running, it will not allow you to alter dashboards. The example dashboards for Clickouse are 
+and data sources, and even if you get it running, it will not allow you to alter dashboards. The example dashboards for Clickhouse are 
 worthless placeholders, and the Clickhouse Grafana plugin that it's trying to use is the old Altinity version, which could be made to
 work, but spending energy on that would be less useful than using the newer Clickhouse datasource plugin, which is what you'll use in
 "real life" anyways. I would plan to launch a separate container for Grafana, and you can build dashboards as you see fit. (I will make some 
@@ -61,6 +61,6 @@ to develop/play with it, you will want persistence across restarts, so maybe pla
 ### three
 Delete the Prometheus section of docker-compose-clickhouse-collect.yml. There's nothing wrong with it, as far as I know, but it's 
 beside-the-point until you get kafka/clickhouse/goflow working. Prometheus is only there to monitor kafka/clickhouse/goflow, so you 
-can add it back when you have a working thing. Plus, if you never go beyond trying out the demo, it's irrelevant. There are dashboards for Grafana to visualize from Prometheus, in the compose/../grafana folders. 
+can add it back when you have a working thing. Plus, if you never go beyond trying out the demo, it's irrelevant. There are dashboards for Grafana to visualize from Prometheus, in the compose/*/grafana folders. 
 
 
