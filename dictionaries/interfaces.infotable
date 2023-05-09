@@ -1,0 +1,4 @@
+RouterID	Interface	ip	ifName	ifAlias
+192.0.2.22	2003043	203.0.113.17	Vlan4321	Boss's Office: throttled to T1 rate
+198.51.100.121	2003757	203.0.113.253	Vlan1234	Security cameras on dog park
+
