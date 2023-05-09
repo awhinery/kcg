@@ -11,4 +11,4 @@ A subsequent flow collection and visualization project, [Elastiflow](https://www
 
 ## Flows and flows
 
-NetFlow(tm) is a Cisco faeture that appeared around 1996[*](https://en.wikipedia.org/wiki/NetFlow) in Cisco routers. Original NetFlow sampled all packets, followed by Sampled Netflow, which sampled a packet every-so-often, either by periodic or random triggers. 
+NetFlow(tm) is a Cisco feature that appeared around 1996[*] (https://en.wikipedia.org/wiki/NetFlow) in Cisco routers. Original NetFlow sampled all packets, followed by Sampled Netflow, which sampled a packet every-so-often, either by periodic or random triggers. 
