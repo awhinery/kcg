@@ -47,6 +47,18 @@ something like:
 
 (the above line inserted into your crontab file)
 
+Example dictionary source files in this directory: 
+
+* aslist.tsv - the above-mentioned as name/country-code mapping dictionary from information fetched in April 2023.
+* etype.tsv  - a list of EtherTypes in order to display names instead of EType numbers. Flow data fills the EType field with numbers that are not IANA-listed ETypes, which I have to do more work to understand. 
+* iso-3166.tsv - for mapping ISO 2-letter country codes from autnums.tsv to country names. 
+* protocols.csv - taken directly from [GoFlow2 repo](https://github.com/netsampler/goflow2/tree/main/compose/kcg/clickhouse). Maps L4 protocols to names.
+* 
+
+Dummy examples that have been sanitized to avoid putting a list of my router interfaces and IP addresses on GitHub. 
+* exporter_ip.infotable - a list of IP addresses found on exporters, filled by Perl scripts which query the routers by SNMP.
+* interfaces.infotable - a list of interfaces on exporters, filled by Perl scripts which query the routers by SNMP. This dict is used with the Clickhouse flows_raw columns "InIf" and "OutIf" which hold the SNMP interfaces Index numbers of those respective interfaces. 
+
 
 
 
