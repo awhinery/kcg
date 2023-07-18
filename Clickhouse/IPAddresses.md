@@ -1,7 +1,7 @@
 # Referencing And Using IP Addresses in GoFlow/Clickhouse
 
 This doc addresses the essentially non-obvious way that you can work with IP addresses (whether IPv6 or IPv4 addresses) in GoFlow/Clickhouse.
-NOTE: I MAY CHANGE THE PART ABOUT CONVERSIONS FROM FIXEDSTRING(16) TO IPv[46] ADDRESSES VERY SOON. (seems like I can simplify the functions I'm using.
+NOTE: I MAY CHANGE THE PART ABOUT CONVERSIONS FROM FIXEDSTRING(16) TO IPv[46] ADDRESSES VERY SOON. (seems like I can simplify the functions I'm using.)
 
 ## context
 
@@ -73,7 +73,7 @@ Currently, my data in tables "flows" and "flows_raw" looks like:
 |Bytes | UInt64  |
 |Packets | UInt64 |
 
-Some fields have been included to discover whether they're being reported by any router. (In my main 1000 packets-per-second of flow reports coming to the U. Hawaii KCG instance, I do in fact have reports with "HasPPP" = true). 
+Some fields have been included to discover whether they're being reported by any router. (In my main 1000 packets-per-second of flow reports coming to the U. Hawaii KCG instance, I do in fact have flow records with "HasPPP" = true). 
 
 Three of the columns contain IP addresses, which may be either IPv4 or IPv6 addresses, in FixedString(16). This type is a binary string, which will not print properly when displayed without some sort of formating function. If you are connected to you server by SSH, and you use the clickhouse-client to do:
 
@@ -146,3 +146,51 @@ The IPv6 version is less unsightly:
    |2001:db8:4101:30:7DB7::A08D |String|
   
 In this case, I used a WHERE clause to specify ethertype 0x86DD, which is indicates that the Ethernet frame payload is an IPv6 datagram. If I were going to specify IPv4, I would have used ethertype 0x0800. 
+
+### Defining IP address display functions
+
+In order to avoid typing things like:
+    SELECT toIPv4(reinterpretAsUInt32(substring(reverse(SrcAddr), 13,4))) as src
+
+I created 2 display functions, dispIPv4 and dispIPany. 
+
+**dispIPv4** will display the provided FixedString's low-order 4 bytes as a dotted quad, without checking to see that the provided FixedString[16] acutally contains an IPv4 number:
+
+    CREATE FUNCTION dispIPv4  AS (n) -> IPv4NumToString(reinterpretAsUInt32(substring(reverse(n), 13,4)))
+
+Which can be used thusly:
+    SELECT dispIPv4(SamplerAddress) as exp FROM flows_raw LIMIT 1
+
+    | exp |
+    |-----|
+    |203.0.113.1 |
+
+Note: **dispIPv4** will happily print 4 bytes of a supplied IPv6 address in dotted quad, and it will often look like a valid IPv4 address. If you're going to use this function, there needs to be some sort of assurance that it will only encounter IPv4 addresses, such as a "WHERE EType = 0x0800" or similar. 
+
+**dispIPany** displays either IP address type, based on the EType in the current flow record, and NULL if the EType is neither 0x0800 (IPv4) nor 0x86dd (IPv6)
+The NULL output can cause issues when the output is suppled to a receiver function that does not use type "NULLABLE". 
+
+    CREATE FUNCTION dispIPany  AS (n) -> if (EType = 0x800, IPv4NumToString(reinterpretAsUInt32(substring(reverse(n), 13,4))) , if (EType = 0x86DD, IPv6NumToString(n),NULL ))
+
+There is no "dispIPv6" user function, since IPv6NumToString(SrcAddr) is not much more typing. 
+
+In my flow queries that include "SamplerAddress" (the IP address which the router that exported the flow record used to send it), I always use **dispIPv4** because all of my flow sources use IPv4 addresses, and the SamplerAddress is not necessarily the same family as the EType field (A routrer might send you an IPv6 flow record in an IPv4 packet). 
+
+### The SrcNet and DstNet Fields
+The schema provides 2 columns (SrcNet, DstNet) with mask-length number for source or destination addresses in flows where it has a route for the IP address in question. 
+
+This is the number you see in so-called "CIDR" notation, after the slash (e.g. 203.0.113.0/24 --> SrcNet = 24).
+
+Using SrcAddr/SrcNet as an example, **IFF** the router has a route for a prefix which includes SrcAddr, it will populate SrcNet. If it has no prefix for SrcAddr, then it will probably return a SrcNet of zero. If the reporting router is a border router with a full BGP table, it will probably report SrcNet for pretty much everything. If it's an internal IGP router, then it will report SrcNet of zero for source addresses outside its route table scope. 
+
+In order to get the zero-number of the prefix formed with SrcAddr and SrcNet, you can use: 
+    
+    SELECT toIPv4(IPv4CIDRToRange(toIPv4(dispIPv4(SrcAddr)), SrcNet).1) AS prefix
+    OR
+    SELECT IPv6CIDRToRange(toIPv6(SrcAddr), SrcNet).1 as v6 prefix
+
+The "IPv*CIDRToRange" functions return a tuple with the lowest address and the highest address in the range. The ".1" index in the above examples references the lowest (zero) address for the subnet range. 
+    
+
+
+    
